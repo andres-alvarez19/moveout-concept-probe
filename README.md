@@ -59,3 +59,7 @@ Los agentes son optativos y requieren entorno real para build/test; su runner **
 - [Reglas para revisar/aprobar contratos](contracts/README.md)
 
 **Importante:** `/health` es una ruta pública excepcional en la raíz según contrato API #52; los demás endpoints de API indicados utilizan `/api/v1`. Las recompensas definitivas requieren validación del backend; la cámara y MediaPipe siempre se procesan localmente.
+
+## Orquestación reanudable de los ocho contratos
+
+Consulta [el manual del orquestador](docs/AUTONOMOUS_ORCHESTRATOR.md). Tras aprobación de contratos, usa `python -m factory.cli plan-all` y `python -m factory.cli run-all --execute`; continúa con `--resume` cuando los PoC predecesores hayan sido revisados y aceptados. `run-all` no fusiona código ni declara pruebas físicas cumplidas.
