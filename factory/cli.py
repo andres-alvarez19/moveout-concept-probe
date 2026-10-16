@@ -12,6 +12,7 @@ from factory.contracts import (
 )
 from factory.prompts import compose_prompt
 from factory.runner import run_agents
+from factory.orchestrator import run_all, accept, status as orchestrator_status, ordered
 
 
 REQUIRED_FILES = (
@@ -53,6 +54,15 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("contract", type=Path)
     run.add_argument("--execute", action="store_true", required=True,
                      help="Confirmar la ejecución de agentes que modificarán archivos")
+    all_cmd = sub.add_parser("run-all", help="Orquestar todos los contratos con checkpoints y dependencias")
+    mode = all_cmd.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--execute", action="store_true", help="Iniciar ejecución en rama limpia")
+    mode.add_argument("--resume", action="store_true", help="Reanudar checkpoint en la misma rama")
+    sub.add_parser("orchestrator-status", help="Ver estado de los ocho contratos")
+    review = sub.add_parser("accept", help="Registrar aceptación humana tras revisar TODAS las evidencias")
+    review.add_argument("contract_id", help="ID POC-XXX")
+    review.add_argument("--reviewed-by", required=True, help="Identificador no vacío del revisor responsable")
+    sub.add_parser("plan-all", help="Orden topológico y dependencias del catálogo")
     return parser
 
 
@@ -83,6 +93,20 @@ def main(argv: list[str] | None = None) -> int:
                 print("Sin contratos aprobados ni PoC ejecutados; solo infraestructura validada.")
             return 0
 
+        if args.command == "plan-all":
+            catalog = load_catalog()
+            _json({"order": ordered(catalog), "dependencies": {cid: catalog[cid]["depends_on"] for cid in ordered(catalog)}})
+            return 0
+        if args.command == "orchestrator-status":
+            _json(orchestrator_status())
+            return 0
+        if args.command == "run-all":
+            report = run_all(resume=args.resume)
+            _json(report)
+            return 0 if report["all_accepted"] else 3
+        if args.command == "accept":
+            _json(accept(args.contract_id, args.reviewed_by))
+            return 0
         data = _contract_and_catalog(args.contract)
         if args.command == "validate":
             _json({"valid": True, "contract": data["id"], "status": data["status"]})
