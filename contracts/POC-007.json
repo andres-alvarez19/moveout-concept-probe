@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "id": "POC-007",
+  "title": "Docker Compose sobre Linux con PostgreSQL privado y terminación HTTPS",
+  "objective": "Probar despliegue reproducible del monolito FastAPI y PostgreSQL en contenedores Docker sobre Linux con red interna, volumen persistente, proxy inverso TLS y endpoint contractual /health.",
+  "status": "draft",
+  "components": [
+    "C2",
+    "C3"
+  ],
+  "traceability": {
+    "sdd": [
+      "2.1",
+      "5.1",
+      "7.1",
+      "7.3",
+      "7.4",
+      "8.1",
+      "8.3",
+      "ADR-0006"
+    ],
+    "srs": [
+      "RNF-05",
+      "RNF-11",
+      "RNF-12",
+      "RNF-16",
+      "RNF-17"
+    ],
+    "api": [
+      "#52"
+    ]
+  },
+  "depends_on": [
+    "POC-006"
+  ],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": false,
+    "requires_postgres": true
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Crear y levantar despliegue Docker Compose en Linux con FastAPI/ASGI, PostgreSQL y proxy inverso.",
+      "method": "integration",
+      "expected": "Comandos docker compose config, build, up y ps finalizan correctamente; contenedores alcanzan estado saludable y conexión FastAPI->PostgreSQL funcional en red privada.",
+      "evidence_path": "evidence/POC-007/linux-compose.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Verificar exposición de red desde fuera del host y desde la red interna de contenedores.",
+      "method": "integration",
+      "expected": "Desde host/red externa PostgreSQL 5432 no está publicado; únicamente proxy expone el punto público configurado; conexión de FastAPI a PostgreSQL solo por red interna.",
+      "evidence_path": "evidence/POC-007/network-isolation.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Acceder a /health por HTTPS a través del proxy con certificado válido del entorno de ensayo; verificar manejo HTTP plano.",
+      "method": "integration",
+      "expected": "Se registra URL de ensayo redactada si es sensible, validación TLS/cadena/certificado y respuesta 200 JSON exacta de #52; HTTP plano no sirve datos API sensibles (redirige o se bloquea). Si no hay DNS/certificado verificable, marcar BLOQUEADO.",
+      "evidence_path": "evidence/POC-007/tls-proxy.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Interrumpir PostgreSQL dejando viva la API y consultar de nuevo /health a través del proxy.",
+      "method": "integration",
+      "expected": "Responde 503 con {data:{status:'unavailable'}} según #52, y tras recuperación vuelve a 200; no muestra datos internos ni credenciales.",
+      "evidence_path": "evidence/POC-007/health-outage.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Recrear los contenedores de aplicación y PostgreSQL usando volúmenes persistentes, sin ejecutar migraciones destructivas automáticas.",
+      "method": "integration",
+      "expected": "Los datos de ensayo sobreviven recreation de contenedores; se valida alembic upgrade en instancia de prueba y se documenta estrategia de reversión compatible.",
+      "evidence_path": "evidence/POC-007/persistent-volume-migrations.md"
+    },
+    {
+      "id": "AC-06",
+      "description": "Revisar secretos y operación: configuración fuera de Git, backups PostgreSQL y logs estructurados sin datos sensibles.",
+      "method": "manual",
+      "expected": "Se entrega procedimiento reproducible de backup/restore de datos ficticios, evidencia de exclusión de secretos y variables no versionadas, y límites de observabilidad; no se presume disponibilidad mensual >=99% a partir de un ensayo.",
+      "evidence_path": "evidence/POC-007/operations.md"
+    }
+  ]
+}

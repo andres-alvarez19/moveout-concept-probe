@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "id": "POC-004",
+  "title": "MediaPipe Pose Landmarker local y alternativa sin cámara",
+  "objective": "Probar cámara nativa y MediaPipe Pose Landmarker con inferencia exclusivamente en Android, obtener resultados derivados de un ejercicio compatible y mantener una ruta manual sin cámara ni transmisión/almacenamiento de fotogramas.",
+  "status": "draft",
+  "components": [
+    "C1-P",
+    "C1-B",
+    "C1-A",
+    "C1-V"
+  ],
+  "traceability": {
+    "sdd": [
+      "2.1",
+      "5.2",
+      "6.1",
+      "7.2",
+      "8.2",
+      "8.5",
+      "10.2",
+      "ADR-0005"
+    ],
+    "srs": [
+      "RF-18",
+      "RF-26",
+      "RF-27",
+      "RNF-01",
+      "RNF-02",
+      "RNF-18",
+      "RNF-19"
+    ],
+    "api": []
+  },
+  "depends_on": [
+    "POC-001"
+  ],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": false
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Abrir una vista Android de cámara bajo permiso y ejecutar una inferencia real con MediaPipe Pose Landmarker sobre un movimiento compatible declarado.",
+      "method": "device",
+      "expected": "Modelo de Pose Landmarker cargado, landmarks procesados en memoria y señal derivada (p. ej. conteo básico); registrar dispositivo, API, modelo y latencias observadas. No confundir detector con validación clínica.",
+      "evidence_path": "evidence/POC-004/mediapipe-device.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Observar el resultado de la sesión en LynxJS mediante Native Module tipado.",
+      "method": "device",
+      "expected": "Solo se exponen datos derivados tipados (estado, conteo/cumplimiento/no detección); ningún pixel, imagen, bitmap, frame ni landmarks sin necesidad cruza el puente.",
+      "evidence_path": "evidence/POC-004/derived-result-bridge.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Inspeccionar almacenamiento de aplicación, salidas de log y tráfico durante y tras la sesión con cámara.",
+      "method": "manual",
+      "expected": "No hay persistencia ni envío de imágenes/video corporales; conservar evidencia sanitizada de inspección y tráfico, sin adjuntar capturas corporales crudas ni fotogramas.",
+      "evidence_path": "evidence/POC-004/privacy-audit.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Denegar/revocar CAMERA y simular fallo de detección con condiciones reales de iluminación/encuadre.",
+      "method": "device",
+      "expected": "El flujo no concede cumplimiento automático: informa NO_DETECTADA/error técnico cuando aplique y ofrece iniciar/completar la alternativa manual autorizada sin bloquear otras funciones.",
+      "evidence_path": "evidence/POC-004/fallback-no-camera.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Ejecutar pruebas de dominio de detección de estado o conteo con señales derivadas de prueba, separadas del detector físico.",
+      "method": "automated",
+      "expected": "Las pruebas de la máquina de estados no exigen cámara y se distinguen explícitamente de la prueba de inferencia real MediaPipe.",
+      "evidence_path": "evidence/POC-004/pose-domain-tests.md"
+    }
+  ]
+}

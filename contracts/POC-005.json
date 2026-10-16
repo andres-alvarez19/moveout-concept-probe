@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "id": "POC-005",
+  "title": "Persistencia Room, cola causal offline y reconciliación WorkManager",
+  "objective": "Demostrar en Android real y con backend PostgreSQL que eventos, intervenciones, pausas manuales y resultados sobreviven desconexión/reinicio y se reconcilian por orden causal con UUID estables, sin conceder premios provisionalmente.",
+  "status": "draft",
+  "components": [
+    "C1-A",
+    "C1-D",
+    "C1-R",
+    "C1-S",
+    "C2",
+    "C3"
+  ],
+  "traceability": {
+    "sdd": [
+      "4.2",
+      "5.2",
+      "5.3",
+      "6.1",
+      "6.2",
+      "6.3",
+      "8.3",
+      "ADR-0001",
+      "ADR-0004"
+    ],
+    "srs": [
+      "RF-11",
+      "RF-12",
+      "RF-16",
+      "RF-24",
+      "RF-26",
+      "RF-27",
+      "RF-38",
+      "RNF-08",
+      "RNF-09",
+      "RNF-15"
+    ],
+    "api": [
+      "#25",
+      "#28",
+      "#31",
+      "#36",
+      "#38"
+    ]
+  },
+  "depends_on": [
+    "POC-003",
+    "POC-006"
+  ],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": true
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Guardar en Room/SQLite una instantánea efectiva versionada de GET /me/sync-state y una cola con UUID inmutable, instante UTC original, tipo, estado y dependencias.",
+      "method": "integration",
+      "expected": "Reinicio del proceso no elimina instantánea ni elementos pendientes; los campos se recuperan iguales y los IDs de operación no se regeneran.",
+      "evidence_path": "evidence/POC-005/room-persistence.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Desactivar conectividad, detectar una condición local usando configuración en caché y completar una pausa sin cámara, luego cerrar y reabrir la APK.",
+      "method": "device",
+      "expected": "La intervención y pausa local funcionan sin conexión en dispositivo, el resultado queda PENDIENTE con occurred_at original y no hay minuto adicional confirmado ni nuevos giros offline.",
+      "evidence_path": "evidence/POC-005/offline-device-restart.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Restaurar sesión y red; ejecutar sincronización diferible mediante WorkManager respetando evento -> intervención -> acción -> pausa -> resultado.",
+      "method": "integration",
+      "expected": "GET /me/sync-state #28 entrega snapshot completo; POST /usage-events/batch #25 resuelve local_intervention_id; #31 y #36 reciben IDs reconciliados, y #38 registra solo resultados derivados; acuses y estados finales persisten.",
+      "evidence_path": "evidence/POC-005/causal-order-and-mapping.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Reenviar exactamente el mismo UUID tras corte de red entre commit backend y recepción del Ack.",
+      "method": "integration",
+      "expected": "No se duplican recursos, intervenciones ni recompensas; #25 informa ACCEPTED/DUPLICATE según corresponda y los reintentos de #31/#36/#38 preservan identidad y semántica de respuesta.",
+      "evidence_path": "evidence/POC-005/idempotent-retry.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Provocar expiración de token y una respuesta semánticamente rechazada durante la cola de sincronización.",
+      "method": "integration",
+      "expected": "401 deja operación durable pendiente hasta autenticación válida; error semántico lleva la operación a CONFLICTO sin descartar sucesoras ni inventar confirmación; se registra diagnóstico sin secretos.",
+      "evidence_path": "evidence/POC-005/failure-recovery.md"
+    },
+    {
+      "id": "AC-06",
+      "description": "Comprobar ejecución diferible de WorkManager en la APK mientras UI está cerrada o recreándose, en condiciones permitidas por Android.",
+      "method": "device",
+      "expected": "El worker reintenta al recuperar red y conserva operaciones; se documenta ventana real de ejecución sin usar WorkManager como monitor continuo ni prometer ejecución exacta.",
+      "evidence_path": "evidence/POC-005/workmanager-device.md"
+    },
+    {
+      "id": "AC-07",
+      "description": "Conciliar pausa completada cerca del reinicio lógico después de recuperar red.",
+      "method": "integration",
+      "expected": "Se conserva occurred_at UTC original y config_version; día lógico se atribuye según zona horaria y reset_time de RNF-15. Candidatas offline no aumentan límite hasta decisión backend.",
+      "evidence_path": "evidence/POC-005/logical-day-boundary.md"
+    }
+  ]
+}

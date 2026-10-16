@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "id": "POC-002",
+  "title": "Permisos Android, UsageStatsManager y evaluación local de uso",
+  "objective": "Comprobar la disponibilidad real de datos de uso Android con autorización explícita, la evaluación de una regla Kotlin independiente de UI y la degradación controlada ante revocación o ausencia de cobertura.",
+  "status": "draft",
+  "components": [
+    "C1-OS",
+    "C1-D",
+    "C1-A",
+    "C1-B"
+  ],
+  "traceability": {
+    "sdd": [
+      "4.1",
+      "5.2",
+      "6.1",
+      "7.2",
+      "8.2",
+      "R-ARQ-02",
+      "ADR-0004"
+    ],
+    "srs": [
+      "RF-06",
+      "RF-11",
+      "RF-12",
+      "RNF-09",
+      "RNF-10",
+      "RNF-19"
+    ],
+    "api": []
+  },
+  "depends_on": [
+    "POC-001"
+  ],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": false
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Guiar al usuario a los ajustes de acceso a datos de uso y leer sesiones mediante UsageStatsManager después de habilitarlo.",
+      "method": "device",
+      "expected": "En Android real API 29+, una sesión de prueba de una aplicación seleccionada aparece como dato de uso observable y queda correlacionada con su periodo; registrar fabricante, versión, pasos y permiso efectivo.",
+      "evidence_path": "evidence/POC-002/usage-granted.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Denegar y luego revocar acceso a estadísticas durante la prueba; consultar nuevamente el adaptador.",
+      "method": "device",
+      "expected": "Se indica explícitamente cobertura NO DISPONIBLE/permiso faltante y no se contabilizan periodos sin cobertura como cero uso; el resto de la UI sigue funcionando.",
+      "evidence_path": "evidence/POC-002/permission-revoked.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Ejecutar una regla local determinista sobre eventos reales o muestras Kotlin explícitamente etiquetadas como fixture.",
+      "method": "automated",
+      "expected": "Casos límite del umbral y versiones de configuración se evalúan correctamente sin red ni dependencia de ReactLynx; fixtures no se contabilizan como prueba de monitoreo Android.",
+      "evidence_path": "evidence/POC-002/domain-rules.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Observar el funcionamiento al pasar la app a segundo plano y ante restricciones de batería/ejecución impuestas por Android.",
+      "method": "device",
+      "expected": "Se registran ventanas efectivamente observadas y no observadas sin prometer monitoreo ininterrumpido, privilegios especiales ni acceso a apps no autorizadas.",
+      "evidence_path": "evidence/POC-002/background-limits.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Revisar que la aplicación consulta únicamente paquetes seleccionados para el experimento y no transfiere inventario completo de apps.",
+      "method": "manual",
+      "expected": "Inspección de permisos, logs y tráfico indica finalidad declarada, mínima exposición de datos y ausencia de identificadores de apps ajenas al experimento.",
+      "evidence_path": "evidence/POC-002/data-minimization.md"
+    }
+  ]
+}
