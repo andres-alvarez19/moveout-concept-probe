@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "id": "POC-001",
+  "title": "PLANTILLA — definir capacidad técnica",
+  "objective": "Describir una hipótesis comprobable del SDD; sustituir este texto antes de aprobar.",
+  "status": "draft",
+  "components": [
+    "C1-B",
+    "C1-A"
+  ],
+  "traceability": {
+    "sdd": [
+      "8.2"
+    ],
+    "srs": [
+      "RNF-13"
+    ],
+    "api": []
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Definir pasos reales para probar un Native Module en Android.",
+      "method": "device",
+      "expected": "Registrar resultado medido en Android API 29+; no se acepta un mock.",
+      "evidence_path": "evidence/POC-001/native-bridge-device.md"
+    }
+  ],
+  "depends_on": [],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": false
+  }
+}
