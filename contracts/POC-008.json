@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "id": "POC-008",
+  "title": "Validación integral de calidad, privacidad y recompensas concurrentes",
+  "objective": "Ejecutar una verificación integrada de capacidades críticas del SDD: latencia de intervención/API, privacidad de MediaPipe, idempotencia offline, permisos degradados y control transaccional de recompensas/ruleta; producir informe por RNF con límites explícitos.",
+  "status": "draft",
+  "components": [
+    "C1-P",
+    "C1-B",
+    "C1-A",
+    "C1-D",
+    "C1-OS",
+    "C1-V",
+    "C1-R",
+    "C1-S",
+    "C2",
+    "C3"
+  ],
+  "traceability": {
+    "sdd": [
+      "6.1",
+      "6.2",
+      "8.5",
+      "10.1",
+      "10.2",
+      "10.3",
+      "11.1",
+      "ADR-0001",
+      "ADR-0005"
+    ],
+    "srs": [
+      "RF-07",
+      "RF-22",
+      "RF-23",
+      "RF-26",
+      "RF-27",
+      "RF-38",
+      "RNF-01",
+      "RNF-02",
+      "RNF-08",
+      "RNF-09",
+      "RNF-10",
+      "RNF-11",
+      "RNF-12",
+      "RNF-15",
+      "RNF-19"
+    ],
+    "api": [
+      "#25",
+      "#38",
+      "#39",
+      "#40",
+      "#52",
+      "#54"
+    ]
+  },
+  "depends_on": [
+    "POC-003",
+    "POC-004",
+    "POC-005",
+    "POC-007"
+  ],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": true
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Implementar y probar #39 y #40: sorteo únicamente en backend, tres giros máximos y aceptación; nunca generar giros offline.",
+      "method": "integration",
+      "expected": "Por sorteo uniforme de 300 resultados: TIME_PRIZE exactamente 6/300 (2%) y cada una de seis pausas 49/300; tercer giro multiplier=2 solo sobre efecto (+5->+10 o duración x2), retransmisión mismo event_id conserva Spin y cuarto giro falla 409 SPIN_LIMIT_REACHED.",
+      "evidence_path": "evidence/POC-008/roulette-contract.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Generar solicitudes concurrentes de aceptación de premio y resultado de pausa calificable para el mismo usuario/día lógico.",
+      "method": "integration",
+      "expected": "Unicidad transaccional impide doble concesión para origen/event_id y el número de concesiones otorgadas no supera max_daily_extensions compartido; premio 5 o 10 min consume una unidad, DAILY_CAP deniega sin conceder minutos.",
+      "evidence_path": "evidence/POC-008/reward-concurrency.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Medir p95 de API con 50 usuarios concurrentes en hardware/entorno documentado y tiempo de evaluación backend por solicitud.",
+      "method": "integration",
+      "expected": "El 95% de las solicitudes de escenario medido responde <=1s y evaluación backend <=500ms; registrar herramienta, dataset, duración, percentiles, errores y entorno; resultado FALLA/BLOQUEADO si se exceden umbrales.",
+      "evidence_path": "evidence/POC-008/load-and-backend-latency.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Medir en dispositivo físico la intervención real desde detección local hasta canal visible; revalidar permisos y alternativa degradada.",
+      "method": "device",
+      "expected": "Delta <=2 segundos desde detección, observado en condiciones descritas; sin privilegios ni simulación de overlay. Revocación limita solo capacidad afectada (RNF-19).",
+      "evidence_path": "evidence/POC-008/device-latency-permissions.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Auditar sesión MediaPipe integrada, paquete Android, archivos persistidos, logs y tráfico real hacia backend.",
+      "method": "manual",
+      "expected": "No se transmiten ni guardan imágenes/fotogramas corporales; resultado de #38 contiene solo métricas derivadas y no landmarks/video; registrar metodología, herramientas y hallazgos sanitizados.",
+      "evidence_path": "evidence/POC-008/end-to-end-privacy.md"
+    },
+    {
+      "id": "AC-06",
+      "description": "Realizar flujo completo uso->intervención->pausa->resultado con interrupción/reinicio de dispositivo y reintentos cruzando límite de día lógico.",
+      "method": "integration",
+      "expected": "Persistencia causal, idempotencia, correlación de IDs, occurred_at UTC y RNF-15: sin pérdidas/duplicación de recursos y sin usar recompensas pendientes offline como tiempo confirmado.",
+      "evidence_path": "evidence/POC-008/offline-cross-day.md"
+    },
+    {
+      "id": "AC-07",
+      "description": "Validar migrations y health sobre entorno Docker con PostgreSQL, y documentar cobertura de los siete escenarios Q-01..Q-07 del SDD.",
+      "method": "integration",
+      "expected": "Se conservan comandos, trazabilidad RF/RNF y estados PASA/FALLA/BLOQUEADO/NO EJECUTADO por Q-01..Q-07; los test exigidos están ejecutados y sus logs disponibles.",
+      "evidence_path": "evidence/POC-008/quality-traceability.md"
+    },
+    {
+      "id": "AC-08",
+      "description": "Preparar informe de cierre con riesgos residuales, resultados reales y límites de disponibilidad/seguridad.",
+      "method": "manual",
+      "expected": "Se distingue piloto de producto final; RNF-11 >=99% mensual solo se considera medido con observación mensual excluyendo mantenimiento planificado, nunca con un smoke test; no se aprueba automáticamente.",
+      "evidence_path": "evidence/POC-008/final-qa-report.md"
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "id": "POC-006",
+  "title": "FastAPI, PostgreSQL, SQLAlchemy y Alembic con contratos v1",
+  "objective": "Demostrar un backend FastAPI/Pydantic realmente conectado a PostgreSQL con migraciones Alembic, autenticación mínima conforme a contratos oficiales, ingesta idempotente y snapshot versionado requerido por el cliente local-first.",
+  "status": "draft",
+  "components": [
+    "C2",
+    "C3"
+  ],
+  "traceability": {
+    "sdd": [
+      "4.1",
+      "5.3",
+      "5.4",
+      "6.2",
+      "7.3",
+      "8.1",
+      "8.3",
+      "8.6",
+      "ADR-0003"
+    ],
+    "srs": [
+      "RF-01",
+      "RF-11",
+      "RF-12",
+      "RF-15",
+      "RNF-05",
+      "RNF-07",
+      "RNF-08",
+      "RNF-09",
+      "RNF-12",
+      "RNF-17"
+    ],
+    "api": [
+      "#01",
+      "#02",
+      "#25",
+      "#28",
+      "#52"
+    ]
+  },
+  "depends_on": [],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": false,
+    "requires_postgres": true
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Inicializar FastAPI como monolito modular y definir en Pydantic solicitudes, respuestas, errores y routers de #01, #02, #25 y #28; implementar GET /health sin prefijo de versión según #52.",
+      "method": "automated",
+      "expected": "Las rutas publicadas coinciden con /api/v1/auth/register, /api/v1/auth/login, /api/v1/usage-events/batch, /api/v1/me/sync-state y /health; no se introduce un endpoint público auxiliar ni se altera la forma de respuesta.",
+      "evidence_path": "evidence/POC-006/routes-and-schemas.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Registrar e iniciar sesión con contratos #01 y #02 usando credenciales de prueba y PostgreSQL real; probar también falta de Bearer y datos inválidos.",
+      "method": "integration",
+      "expected": "Registro 201 con adult_confirmed y términos aceptados; login 200 con token válido, contraseña con hash irreversible, expiración de access token <= 15 min y aislamiento 401 del recurso privado. Las funciones no implementadas se mantienen fuera de este PoC.",
+      "evidence_path": "evidence/POC-006/auth-httpx-postgres.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Ingerir lote de 1..100 UsageEvent conforme #25, con UUID, config_version y local_intervention_id opcional; retransmitir el lote.",
+      "method": "integration",
+      "expected": "Primera ingesta 200 data.results en orden con ACCEPTED y mapeo de intervención cuando aplica; retransmisión del mismo event_id por usuario recibe DUPLICATE sin filas nuevas, intervención duplicada ni segunda notificación.",
+      "evidence_path": "evidence/POC-006/usage-batch-idempotence.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Obtener GET /api/v1/me/sync-state autenticado como snapshot consistente para cliente offline.",
+      "method": "integration",
+      "expected": "Respuesta 200 conserva estructura completa de #28 (settings, daily_limit, contexts, active_context, rules, rules_state, exercise_preferences, config_version, server_time y day), con config_version monotónica y sin campos contractuales omitidos.",
+      "evidence_path": "evidence/POC-006/full-sync-snapshot.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Ejecutar migraciones Alembic desde PostgreSQL vacío y las operaciones transaccionales de ingesta; inspeccionar índices y claves.",
+      "method": "integration",
+      "expected": "Alembic upgrade reproduce el esquema; se comprueba persistencia y consistencia al repetir operaciones, índices/únicos por usuario+event_id y rollback en error, con comandos y dump de esquema sanitizado.",
+      "evidence_path": "evidence/POC-006/alembic-transactions.md"
+    },
+    {
+      "id": "AC-06",
+      "description": "Consultar /health con PostgreSQL disponible y con dependencia esencial no disponible mientras FastAPI sigue en ejecución.",
+      "method": "integration",
+      "expected": "Con dependencias sanas: 200 {data:{status:'ok'}}. Con dependencia esencial fallida: 503 {data:{status:'unavailable'}}; no se revelan secretos, hostnames internos ni tokens.",
+      "evidence_path": "evidence/POC-006/health-dependencies.md"
+    },
+    {
+      "id": "AC-07",
+      "description": "Ejecutar pytest/HTTPX y revisar configuración de secretos, logs de correlación y permisos de acceso entre dos usuarios.",
+      "method": "automated",
+      "expected": "Suite ejecutada informa casos positivos/negativos; claves salen de entorno externo, logs omiten tokens/passwords y las lecturas/escrituras privadas impiden referencias de otro usuario.",
+      "evidence_path": "evidence/POC-006/backend-tests-and-privacy.md"
+    }
+  ]
+}
