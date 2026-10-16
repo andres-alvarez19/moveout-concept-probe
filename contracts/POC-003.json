@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "id": "POC-003",
+  "title": "Intervención local, overlay autorizado y alternativa degradada",
+  "objective": "Verificar que una condición de uso detectada desencadena una intervención gestionada en Kotlin en <=2 s, que un overlay solo se usa con permiso concedido y que hay alternativa observable cuando Android limita la capacidad.",
+  "status": "draft",
+  "components": [
+    "C1-P",
+    "C1-B",
+    "C1-A",
+    "C1-D",
+    "C1-OS"
+  ],
+  "traceability": {
+    "sdd": [
+      "5.2",
+      "6.1",
+      "6.3",
+      "7.2",
+      "8.2",
+      "10.2",
+      "R-ARQ-02"
+    ],
+    "srs": [
+      "RF-03",
+      "RF-12",
+      "RF-13",
+      "RF-14",
+      "RF-16",
+      "RNF-10",
+      "RNF-19"
+    ],
+    "api": []
+  },
+  "depends_on": [
+    "POC-002"
+  ],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": false
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Configurar una regla de prueba, observar detección local y la presentación real de intervención mediante notificación u overlay autorizado.",
+      "method": "device",
+      "expected": "Captura con relojes monotónicos de detección y presentación: delta <= 2.000 ms en ensayos reproducibles; declarar dispositivo y condiciones y no inferir resultados de producción.",
+      "evidence_path": "evidence/POC-003/intervention-latency.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Solicitar autorización de superposición mediante ajustes Android; mostrar intervención únicamente tras autorización confirmada.",
+      "method": "device",
+      "expected": "El overlay queda visible en condiciones permitidas; se evidencia estado del permiso, canal utilizado y acciones del usuario, sin acceder ni bloquear irrestrictamente otras apps.",
+      "evidence_path": "evidence/POC-003/overlay-authorized.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Revocar o denegar permiso de superposición/notificaciones e intentar la misma intervención.",
+      "method": "device",
+      "expected": "El sistema registra fallo del canal no disponible, usa la alternativa autorizada cuando exista y nunca informa PRESENTED sin constatación; si no hay canal permitido muestra limitación en el reporte.",
+      "evidence_path": "evidence/POC-003/permission-degradation.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Verificar que el estado de la intervención se mantiene en lógica Kotlin aun si la vista LynxJS se cierra y se recrea.",
+      "method": "device",
+      "expected": "La decisión y el estado de intervención subsisten al cambio de pantalla; no se duplican intervenciones, overlays ni notificaciones por remount de ReactLynx.",
+      "evidence_path": "evidence/POC-003/ui-independent-state.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Probar transiciones principales de intervención con tests Kotlin (DETECTADA, PRESENTADA, APLAZADA o PAUSA_INICIADA, RESUELTA).",
+      "method": "automated",
+      "expected": "Transiciones válidas e inválidas quedan cubiertas sin SDK Android ni dependencia del hilo UI; cada error mantiene estado coherente.",
+      "evidence_path": "evidence/POC-003/state-machine-tests.md"
+    }
+  ]
+}

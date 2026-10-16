@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "id": "POC-001",
+  "title": "Host Android Kotlin con interfaz LynxJS y Native Module tipado",
+  "objective": "Demostrar en una APK real Android API 29+ que ReactLynx/TypeScript se presenta dentro de un host Kotlin, invoca un Native Module tipado, recibe datos y observa un cambio de estado nativo sin acceder directamente al SDK Android.",
+  "status": "draft",
+  "components": [
+    "C1-P",
+    "C1-B",
+    "C1-A"
+  ],
+  "traceability": {
+    "sdd": [
+      "4.1",
+      "5.2",
+      "7.2",
+      "8.2",
+      "ADR-0002",
+      "ADR-0005"
+    ],
+    "srs": [
+      "RF-03",
+      "RF-11",
+      "RNF-13",
+      "RNF-19"
+    ],
+    "api": []
+  },
+  "depends_on": [],
+  "privacy": {
+    "no_video_storage": true,
+    "no_video_transfer": true
+  },
+  "environment": {
+    "requires_real_android": true,
+    "requires_postgres": false
+  },
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "description": "Compilar la APK del host Kotlin y el bundle LynxJS/ReactLynx TypeScript con versiones fijadas en manifests/locks; publicar comandos y SHA-256 del artefacto.",
+      "method": "automated",
+      "expected": "Build finaliza con código 0, genera APK instalable y registra versiones exactas Android Gradle Plugin, Kotlin, LynxJS y dependencias; sin sustituir LynxJS por WebView/mock.",
+      "evidence_path": "evidence/POC-001/build.md"
+    },
+    {
+      "id": "AC-02",
+      "description": "Instalar y abrir la APK en dispositivo físico Android 10/API 29 o superior; accionar en la vista LynxJS una llamada tipada al Native Module de consulta de estado de permisos.",
+      "method": "device",
+      "expected": "Una interacción UI invoca realmente Kotlin y recibe un objeto tipado de estado (con valores reales); consignar modelo, API, permiso observado, entrada, salida y correlación de trazas.",
+      "evidence_path": "evidence/POC-001/bridge-request-response.md"
+    },
+    {
+      "id": "AC-03",
+      "description": "Emitir un evento controlado desde Kotlin hacia ReactLynx y observar actualización visible de estado sin recargar la pantalla.",
+      "method": "device",
+      "expected": "El evento se recibe exactamente una vez por emisión mientras el listener está registrado; documentar suscripción, desuscripción, carga y descarga de pantalla mediante logs/capturas sanitizadas.",
+      "evidence_path": "evidence/POC-001/bridge-event.md"
+    },
+    {
+      "id": "AC-04",
+      "description": "Validar tipos, errores y fronteras entre Kotlin y TypeScript mediante pruebas independientes de UI y de adaptador.",
+      "method": "automated",
+      "expected": "Hay pruebas ejecutadas que rechazan mensajes mal formados y comprueban que el puente no expone objetos Android SDK, bitmaps, frames, credenciales ni acceso directo a servicios nativos.",
+      "evidence_path": "evidence/POC-001/bridge-tests.md"
+    },
+    {
+      "id": "AC-05",
+      "description": "Rotar pantalla o recrear la Activity y volver a invocar el módulo desde LynxJS.",
+      "method": "device",
+      "expected": "La Activity no deja listeners duplicados ni falla por referencias obsoletas; registrar resultado real y limitaciones del dispositivo sin declararlo compatible si falla.",
+      "evidence_path": "evidence/POC-001/lifecycle.md"
+    }
+  ]
+}
