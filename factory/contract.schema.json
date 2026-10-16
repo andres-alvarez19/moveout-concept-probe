@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moveout.example/schema/poc-contract-v1",
+  "title": "Contrato PoC MoveOut (estructura; además se aplican invariantes semánticas en factory/contracts.py)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "title",
+    "objective",
+    "status",
+    "components",
+    "traceability",
+    "acceptance",
+    "depends_on",
+    "privacy",
+    "environment"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^POC-[0-9]{3}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "approved"
+      ]
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "C1-P",
+          "C1-B",
+          "C1-A",
+          "C1-D",
+          "C1-OS",
+          "C1-V",
+          "C1-R",
+          "C1-S",
+          "C2",
+          "C3"
+        ]
+      }
+    },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sdd",
+        "srs",
+        "api"
+      ],
+      "properties": {
+        "sdd": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "srs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(RF|RNF|OTR)-[0-9]{2}$"
+          }
+        },
+        "api": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^#[0-9]{2}$"
+          }
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^POC-[0-9]{3}$"
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "no_video_storage",
+        "no_video_transfer"
+      ],
+      "properties": {
+        "no_video_storage": {
+          "const": true
+        },
+        "no_video_transfer": {
+          "const": true
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requires_real_android",
+        "requires_postgres"
+      ],
+      "properties": {
+        "requires_real_android": {
+          "type": "boolean"
+        },
+        "requires_postgres": {
+          "type": "boolean"
+        }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "method",
+          "expected",
+          "evidence_path"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^AC-[0-9]{2}$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method": {
+            "enum": [
+              "automated",
+              "integration",
+              "device",
+              "manual"
+            ]
+          },
+          "expected": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_path": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

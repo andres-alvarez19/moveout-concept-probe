@@ -1,0 +1,24 @@
+name: Factory validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  factory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate factory and contracts
+        run: python -m factory.cli check --all
+      - name: Unit tests for factory
+        run: python -m unittest discover -s factory/tests -v
+      - name: Compile factory
+        run: python -m compileall -q factory
+# Este workflow valida infraestructura y contratos; NO prueba aún APK, PostgreSQL ni PoC en dispositivo.
